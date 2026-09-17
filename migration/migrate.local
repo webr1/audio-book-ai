@@ -1,0 +1,10 @@
+include ../env/.env.local
+
+migrate-apply:
+	atlas migrate apply --env gorm-dev --url "$(DB_CONNECTION_URL)"
+
+migrate-status:
+	atlas migrate status --env gorm-dev --url "$(DB_CONNECTION_URL)"
+
+migrate-down:
+	atlas migrate down --env gorm-dev --url "$(DB_CONNECTION_URL)"

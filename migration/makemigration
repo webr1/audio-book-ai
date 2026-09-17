@@ -1,0 +1,8 @@
+db-diff-dev:
+	atlas migrate diff --env gorm-dev
+
+db-diff-test:
+	atlas migrate diff --env gorm-test
+
+db-diff-prod:
+	atlas migrate diff --env gorm-prod

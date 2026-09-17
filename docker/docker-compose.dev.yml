@@ -1,0 +1,84 @@
+services:
+  audiobook-postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-audiobook}
+    ports:
+      - "5433:5432"
+    volumes:
+      - audiobook-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - audiobook-net
+
+  audiobook-redis:
+    image: redis:7.4
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - audiobook-net
+
+  audiobook-web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["-mode", "http"]
+    env_file:
+      - ../env/.env.local
+    environment:
+      CONTAINER_MODE: "1"
+      DB_HOST: audiobook-postgres
+      DB_PORT: "5432"
+      REDIS_ADDR: audiobook-redis:6379
+    ports:
+      - "8080:8080"
+    volumes:
+      - audiobook-data:/app/data
+    depends_on:
+      audiobook-postgres:
+        condition: service_healthy
+      audiobook-redis:
+        condition: service_healthy
+    networks:
+      - audiobook-net
+
+  audiobook-async:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: ["-mode", "task-worker"]
+    env_file:
+      - ../env/.env.local
+    environment:
+      CONTAINER_MODE: "1"
+      DB_HOST: audiobook-postgres
+      DB_PORT: "5432"
+      REDIS_ADDR: audiobook-redis:6379
+    volumes:
+      - audiobook-data:/app/data
+    depends_on:
+      audiobook-postgres:
+        condition: service_healthy
+      audiobook-redis:
+        condition: service_healthy
+    networks:
+      - audiobook-net
+
+volumes:
+  audiobook-postgres-data:
+  audiobook-data:
+
+networks:
+  audiobook-net:
+    driver: bridge

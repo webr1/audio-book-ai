@@ -1,0 +1,7 @@
+include ../env/.env.prod
+
+migrate-apply:
+	atlas migrate apply --env gorm-prod --url "$(DB_CONNECTION_URL)"
+
+migrate-status:
+	atlas migrate status --env gorm-prod --url "$(DB_CONNECTION_URL)"
