@@ -13,6 +13,7 @@ type BookEntity struct {
 	Status      enum.BookStatus
 	WordCount   int
 	CharCount   int
+	Price       float64
 	ChunksTotal int
 	ChunksDone  int
 	ErrorMsg    string

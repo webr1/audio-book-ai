@@ -98,6 +98,19 @@ func (this *BookRepositoryImpl) SetCounts(ctx context.Context, id uint, wordCoun
 	return nil
 }
 
+func (this *BookRepositoryImpl) SetPrice(ctx context.Context, id uint, price float64) error {
+	db := this.db().WithContext(ctx)
+
+	result := db.Model(&models.BookModel{}).Where("id = ?", id).Update("price", price)
+	if result.Error != nil {
+		return infraError.Wrap(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return infraError.Wrap(gormRecordNotFound)
+	}
+	return nil
+}
+
 func (this *BookRepositoryImpl) SetOutputPath(ctx context.Context, id uint, path string) error {
 	db := this.db().WithContext(ctx)
 

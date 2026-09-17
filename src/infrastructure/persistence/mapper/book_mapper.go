@@ -18,6 +18,7 @@ func BookModelToEntity(m *models.BookModel) *entity.BookEntity {
 		Status:      enum.BookStatus(m.Status),
 		WordCount:   m.WordCount,
 		CharCount:   m.CharCount,
+		Price:       m.Price,
 		ChunksTotal: m.ChunksTotal,
 		ChunksDone:  m.ChunksDone,
 		ErrorMsg:    m.ErrorMsg,

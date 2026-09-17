@@ -47,7 +47,10 @@ func (this *CreateHandler) Handle(c ctx.Context) error {
 	}
 
 	return c.JsonResponse(http.StatusAccepted, map[string]any{
-		"id":     book.ID,
-		"status": book.Status,
+		"id":         book.ID,
+		"status":     book.Status,
+		"word_count": book.WordCount,
+		"char_count": book.CharCount,
+		"price":      book.Price,
 	})
 }

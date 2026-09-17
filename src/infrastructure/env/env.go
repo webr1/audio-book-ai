@@ -25,6 +25,8 @@ type Env struct {
 	MaxUploadMB   int64  `env:"MAX_UPLOAD_MB" envDefault:"20"`
 	TTSProvider   string `env:"TTS_PROVIDER" envDefault:"mock"`
 
+	PricePerChar float64 `env:"PRICE_PER_CHAR" envDefault:"0.5"`
+
 	GoogleClientID string `env:"GOOGLE_CLIENT_ID" envDefault:""`
 
 	JwtSecret               string `env:"JWT_SECRET" envDefault:"dev-secret-change-me"`

@@ -36,6 +36,7 @@ func (this *GetHandler) Handle(c ctx.Context) error {
 		"status":       book.Status,
 		"word_count":   book.WordCount,
 		"char_count":   book.CharCount,
+		"price":        book.Price,
 		"chunks_done":  book.ChunksDone,
 		"chunks_total": book.ChunksTotal,
 		"error":        book.ErrorMsg,
