@@ -67,3 +67,48 @@ func (s *FileStore) OutputPath(bookID uint) string {
 	}
 	return OutputPath(s.dataDir, bookID)
 }
+
+func (s *FileStore) WriteTrialChunk(_ context.Context, bookID uint, idx int, data []byte) (string, error) {
+	if err := os.MkdirAll(TrialChunkDir(s.dataDir, bookID), 0o755); err != nil {
+		return "", fmt.Errorf("create trial chunk dir: %w", err)
+	}
+
+	path := TrialChunkPath(s.dataDir, bookID, idx)
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return "", fmt.Errorf("write trial chunk file: %w", err)
+	}
+	return path, nil
+}
+
+func (s *FileStore) TrialChunkPaths(bookID uint, count int) []string {
+	paths := make([]string, count)
+	for i := 0; i < count; i++ {
+		paths[i] = TrialChunkPath(s.dataDir, bookID, i)
+	}
+	return paths
+}
+
+func (s *FileStore) TrialOutputPath(bookID uint) string {
+	if err := os.MkdirAll(OutputDir(s.dataDir, bookID), 0o755); err != nil {
+		panic(err)
+	}
+	return TrialOutputPath(s.dataDir, bookID)
+}
+
+func (s *FileStore) SaveReceipt(_ context.Context, bookID uint, ext string, r io.Reader) (string, error) {
+	if err := os.MkdirAll(ReceiptDir(s.dataDir, bookID), 0o755); err != nil {
+		return "", fmt.Errorf("create receipt dir: %w", err)
+	}
+
+	path := ReceiptPath(s.dataDir, bookID, ext)
+	f, err := os.Create(path)
+	if err != nil {
+		return "", fmt.Errorf("create receipt file: %w", err)
+	}
+	defer f.Close()
+
+	if _, err := io.Copy(f, r); err != nil {
+		return "", fmt.Errorf("write receipt file: %w", err)
+	}
+	return path, nil
+}

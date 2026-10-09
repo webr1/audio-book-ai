@@ -18,14 +18,26 @@ type BookEntity struct {
 	ChunksDone  int
 	ErrorMsg    string
 	OutputPath  string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+
+	TrialStatus      enum.BookStatus
+	TrialChunksTotal int
+	TrialChunksDone  int
+	TrialErrorMsg    string
+	TrialOutputPath  string
+
+	PaymentStatus      enum.PaymentStatus
+	PaymentReceiptPath string
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func NewBookEntity(userID uint, filename string) *BookEntity {
 	return &BookEntity{
-		UserID:   userID,
-		Filename: filename,
-		Status:   enum.BookStatusPending,
+		UserID:        userID,
+		Filename:      filename,
+		Status:        enum.BookStatusPending,
+		TrialStatus:   enum.BookStatusPending,
+		PaymentStatus: enum.PaymentStatusNone,
 	}
 }

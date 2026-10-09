@@ -7,10 +7,10 @@ Backend-сервис, который превращает загруженный
 ## Как это работает
 
 1. Пользователь логинится через Google (`POST /api/auth/google`), получает JWT.
-2. Загружает `.txt`-файл (`POST /api/book/create`) — текст сразу (синхронно) парсится, и в ответе приходят `id`, статус `pending`, а также `word_count`, `char_count` и `price` — не дожидаясь озвучки.
-3. В фоне (отдельный воркер) книга проходит пайплайн:
-   `извлечение текста → разбивка на части → озвучка каждой части → склейка в один файл`.
-4. Пользователь опрашивает статус (`GET /api/book/:id`) и, когда готово, скачивает аудио (`GET /api/book/:id/audio`).
+2. Загружает `.txt`-файл (`POST /api/book/create`) — текст сразу (синхронно) парсится, и в ответе приходят `id`, `word_count`, `char_count` и `price` за всю книгу.
+3. Сразу автоматически запускается **бесплатный тест** — в фоне озвучивается только начало текста (первые `TRIAL_CHARS` символов). Статус теста (`trial_status`) виден через `GET /api/book/:id`, готовый отрывок — `GET /api/book/:id/trial-audio`.
+4. Чтобы получить **полную** озвучку, нужно оплатить: пользователь загружает фото/скан чека (`POST /api/book/:id/payment-receipt`), оплата подтверждается оператором (`POST /api/book/:id/confirm-payment`, см. ниже) — только после этого запускается полный пайплайн `извлечение текста → разбивка на части → озвучка каждой части → склейка в один файл`.
+5. Когда готово — `status == "done"` и аудио доступно по `GET /api/book/:id/audio`.
 
 Книги привязаны к пользователю — доступ к чужой книге по `id` возвращает `404`.
 
@@ -83,6 +83,24 @@ src/
 Считается сразу, а не в фоновом воркере, потому что подсчёт слов/символов — это просто
 парсинг текста, дешёвая операция в отличие от самой озвучки.
 
+## Бесплатный тест и оплата по чеку
+
+Платёжного шлюза (Payme/Click и т.п.) пока нет — первая версия оплаты работает вручную:
+
+1. При создании книги автоматически (бесплатно) озвучивается только начало текста —
+   `TRIAL_CHARS` символов (настраивается через env, обрезка идёт по границе слова).
+   Результат — отдельный `trial_status`/`trial-audio`, не связан с полной озвучкой.
+2. Пользователь загружает фото/скан чека об оплате (`POST /api/book/:id/payment-receipt`,
+   `.jpg`/`.jpeg`/`.png`/`.pdf`) → `payment_status` становится `pending_review`.
+3. Оператор вручную проверяет чек и подтверждает оплату (`POST /api/book/:id/confirm-payment`
+   с заголовком `X-Admin-Key`, сверяется с env `ADMIN_API_KEY`) → `payment_status` становится
+   `paid`, и только теперь запускается полная озвучка всей книги.
+
+Это стопгап-решение: `ADMIN_API_KEY` — не полноценная система ролей, а разделяемый секрет
+для одного оператора. Если `ADMIN_API_KEY` не задан — эндпоинт подтверждения всегда отвечает
+`403` (выключен по умолчанию, а не дырявый). Реальный платёжный провайдер и нормальные роли —
+в планах.
+
 ## Переменные окружения (`env/.env.local`)
 
 | Переменная | Назначение |
@@ -94,6 +112,8 @@ src/
 | `MAX_CHUNK_CHARS` | максимальный размер куска текста перед озвучкой |
 | `TTS_PROVIDER` | какой TTS-провайдер использовать (сейчас только `mock`) |
 | `PRICE_PER_CHAR` | цена за один символ текста (в сумах), по умолчанию `0.5` |
+| `TRIAL_CHARS` | сколько символов озвучивать бесплатно в тесте, по умолчанию `1000` |
+| `ADMIN_API_KEY` | секрет для `X-Admin-Key` (подтверждение оплаты); пусто = эндпоинт выключен |
 | `GOOGLE_CLIENT_ID` | OAuth Client ID из Google Cloud Console — нужно вписать самостоятельно |
 | `JWT_SECRET` | секрет для подписи JWT (обязательно сменить перед продом) |
 | `JWT_ACCESS_EXPIRE_MINUTES` / `JWT_REFRESH_EXPIRE_MINUTES` | время жизни токенов |
@@ -131,7 +151,16 @@ TOKEN=<access_token из ответа выше>
 curl -s -H "Authorization: Bearer $TOKEN" localhost:8080/api/auth/me
 
 curl -s -H "Authorization: Bearer $TOKEN" -F "file=@sample.txt" localhost:8080/api/book/create
-# -> {"id": 1, "status": "pending", "word_count": 64, "char_count": 423, "price": 211.5}
+# -> {"id": 1, "status": "pending", "trial_status": "pending", "payment_status": "none", "word_count": 64, "char_count": 423, "price": 211.5}
+
+curl -s -H "Authorization: Bearer $TOKEN" localhost:8080/api/book/1
+# повторять, пока trial_status не станет "done"
+
+curl -s -H "Authorization: Bearer $TOKEN" -o trial.wav localhost:8080/api/book/1/trial-audio
+
+# оплата (чек) + подтверждение оператором
+curl -s -H "Authorization: Bearer $TOKEN" -F "file=@receipt.jpg" localhost:8080/api/book/1/payment-receipt
+curl -s -X POST -H "X-Admin-Key: $ADMIN_API_KEY" localhost:8080/api/book/1/confirm-payment
 
 curl -s -H "Authorization: Bearer $TOKEN" localhost:8080/api/book/1
 # повторять, пока status не станет "done"
@@ -147,13 +176,18 @@ curl -s -H "Authorization: Bearer $TOKEN" -o audiobook.wav localhost:8080/api/bo
 | `POST` | `/api/auth/google` | нет | вход по Google ID-токену, выдаёт JWT |
 | `POST` | `/api/auth/refresh` | нет | обновление access-токена по refresh-токену |
 | `GET` | `/api/auth/me` | Bearer | текущий пользователь |
-| `POST` | `/api/book/create` | Bearer | загрузить `.txt`-книгу |
-| `GET` | `/api/book/:id` | Bearer | статус обработки книги |
-| `GET` | `/api/book/:id/audio` | Bearer | скачать готовое аудио |
+| `POST` | `/api/book/create` | Bearer | загрузить `.txt`-книгу, запускает бесплатный тест |
+| `GET` | `/api/book/:id` | Bearer | статус (полный + тестовый + оплата) |
+| `GET` | `/api/book/:id/audio` | Bearer | скачать полное аудио (после оплаты) |
+| `GET` | `/api/book/:id/trial-audio` | Bearer | скачать бесплатный тестовый отрывок |
+| `POST` | `/api/book/:id/payment-receipt` | Bearer | загрузить фото/скан чека об оплате |
+| `POST` | `/api/book/:id/confirm-payment` | Bearer + `X-Admin-Key` | подтвердить оплату, запускает полную озвучку |
 
 ## Планы (не сделано)
 
 - Реальный TTS-провайдер вместо заглушки
+- Реальный платёжный провайдер (Payme/Click) вместо ручного подтверждения по фото чека
+- Полноценные роли/админка вместо `X-Admin-Key`
 - Поддержка `.epub`/`.pdf`
 - Список книг пользователя (`GET /api/book`)
 - CI/CD (не переносили из mobility-backend — там завязано на приватную инфраструктуру)

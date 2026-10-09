@@ -15,12 +15,27 @@ type BookModel struct {
 	ChunksDone  int     `gorm:"column:chunks_done;not null;default:0"`
 	ErrorMsg    string  `gorm:"column:error_msg;type:text;not null;default:''"`
 	OutputPath  string  `gorm:"column:output_path;type:varchar(512);not null;default:''"`
+
+	TrialStatus      string `gorm:"column:trial_status;type:varchar(32);not null;default:pending"`
+	TrialChunksTotal int    `gorm:"column:trial_chunks_total;not null;default:0"`
+	TrialChunksDone  int    `gorm:"column:trial_chunks_done;not null;default:0"`
+	TrialErrorMsg    string `gorm:"column:trial_error_msg;type:text;not null;default:''"`
+	TrialOutputPath  string `gorm:"column:trial_output_path;type:varchar(512);not null;default:''"`
+
+	PaymentStatus      string `gorm:"column:payment_status;type:varchar(32);not null;default:none"`
+	PaymentReceiptPath string `gorm:"column:payment_receipt_path;type:varchar(512);not null;default:''"`
 }
 
 func (BookModel) TableName() string {
 	return "books"
 }
 
-func NewBookModel(userID uint, filename, status string) *BookModel {
-	return &BookModel{UserID: userID, Filename: filename, Status: status}
+func NewBookModel(userID uint, filename, status, trialStatus, paymentStatus string) *BookModel {
+	return &BookModel{
+		UserID:        userID,
+		Filename:      filename,
+		Status:        status,
+		TrialStatus:   trialStatus,
+		PaymentStatus: paymentStatus,
+	}
 }

@@ -6,18 +6,38 @@ import (
 )
 
 type BookGroup struct {
-	createHandler *book.CreateHandler
-	getHandler    *book.GetHandler
-	audioHandler  *book.AudioHandler
+	createHandler         *book.CreateHandler
+	getHandler            *book.GetHandler
+	audioHandler          *book.AudioHandler
+	trialAudioHandler     *book.TrialAudioHandler
+	paymentReceiptHandler *book.PaymentReceiptHandler
+	confirmPaymentHandler *book.ConfirmPaymentHandler
 }
 
 // @inject
-func NewBookGroup(createHandler *book.CreateHandler, getHandler *book.GetHandler, audioHandler *book.AudioHandler) *BookGroup {
-	return &BookGroup{createHandler: createHandler, getHandler: getHandler, audioHandler: audioHandler}
+func NewBookGroup(
+	createHandler *book.CreateHandler,
+	getHandler *book.GetHandler,
+	audioHandler *book.AudioHandler,
+	trialAudioHandler *book.TrialAudioHandler,
+	paymentReceiptHandler *book.PaymentReceiptHandler,
+	confirmPaymentHandler *book.ConfirmPaymentHandler,
+) *BookGroup {
+	return &BookGroup{
+		createHandler:         createHandler,
+		getHandler:            getHandler,
+		audioHandler:          audioHandler,
+		trialAudioHandler:     trialAudioHandler,
+		paymentReceiptHandler: paymentReceiptHandler,
+		confirmPaymentHandler: confirmPaymentHandler,
+	}
 }
 
 func (this *BookGroup) RegisterRoutes(g httpport.Group) {
 	g.POST("/create", this.createHandler.Handle)
 	g.GET("/:id", this.getHandler.Handle)
 	g.GET("/:id/audio", this.audioHandler.Handle)
+	g.GET("/:id/trial-audio", this.trialAudioHandler.Handle)
+	g.POST("/:id/payment-receipt", this.paymentReceiptHandler.Handle)
+	g.POST("/:id/confirm-payment", this.confirmPaymentHandler.Handle)
 }

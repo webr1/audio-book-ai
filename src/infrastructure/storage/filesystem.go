@@ -12,6 +12,7 @@ func EnsureDataDirs(dataDir string) error {
 		filepath.Join(dataDir, "uploads"),
 		filepath.Join(dataDir, "chunks"),
 		filepath.Join(dataDir, "output"),
+		filepath.Join(dataDir, "receipts"),
 	}
 	for _, d := range dirs {
 		if err := os.MkdirAll(d, 0o755); err != nil {
@@ -47,4 +48,24 @@ func OutputDir(dataDir string, bookID uint) string {
 
 func OutputPath(dataDir string, bookID uint) string {
 	return filepath.Join(OutputDir(dataDir, bookID), "audiobook.wav")
+}
+
+func TrialChunkDir(dataDir string, bookID uint) string {
+	return filepath.Join(ChunkDir(dataDir, bookID), "trial")
+}
+
+func TrialChunkPath(dataDir string, bookID uint, idx int) string {
+	return filepath.Join(TrialChunkDir(dataDir, bookID), fmt.Sprintf("%04d.wav", idx))
+}
+
+func TrialOutputPath(dataDir string, bookID uint) string {
+	return filepath.Join(OutputDir(dataDir, bookID), "trial.wav")
+}
+
+func ReceiptDir(dataDir string, bookID uint) string {
+	return filepath.Join(dataDir, "receipts", bookDir(dataDir, bookID))
+}
+
+func ReceiptPath(dataDir string, bookID uint, ext string) string {
+	return filepath.Join(ReceiptDir(dataDir, bookID), "receipt"+ext)
 }

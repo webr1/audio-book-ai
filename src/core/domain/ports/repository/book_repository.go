@@ -15,4 +15,11 @@ type BookRepository interface {
 	SetCounts(ctx context.Context, id uint, wordCount, charCount, chunksTotal int) error
 	SetPrice(ctx context.Context, id uint, price float64) error
 	SetOutputPath(ctx context.Context, id uint, path string) error
+
+	UpdateTrialStatus(ctx context.Context, id uint, status enum.BookStatus, errMsg string) error
+	UpdateTrialProgress(ctx context.Context, id uint, chunksDone, chunksTotal int) error
+	SetTrialOutputPath(ctx context.Context, id uint, path string) error
+
+	SetPaymentReceipt(ctx context.Context, id uint, path string) error
+	SetPaymentStatus(ctx context.Context, id uint, status enum.PaymentStatus) error
 }

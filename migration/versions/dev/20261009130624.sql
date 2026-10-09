@@ -1,0 +1,2 @@
+-- Modify "books" table
+ALTER TABLE "public"."books" ADD COLUMN "trial_status" character varying(32) NOT NULL DEFAULT 'pending', ADD COLUMN "trial_chunks_total" bigint NOT NULL DEFAULT 0, ADD COLUMN "trial_chunks_done" bigint NOT NULL DEFAULT 0, ADD COLUMN "trial_error_msg" text NOT NULL DEFAULT '', ADD COLUMN "trial_output_path" character varying(512) NOT NULL DEFAULT '', ADD COLUMN "payment_status" character varying(32) NOT NULL DEFAULT 'none', ADD COLUMN "payment_receipt_path" character varying(512) NOT NULL DEFAULT '';

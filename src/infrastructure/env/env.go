@@ -26,6 +26,8 @@ type Env struct {
 	TTSProvider   string `env:"TTS_PROVIDER" envDefault:"mock"`
 
 	PricePerChar float64 `env:"PRICE_PER_CHAR" envDefault:"0.5"`
+	TrialChars   int     `env:"TRIAL_CHARS" envDefault:"1000"`
+	AdminAPIKey  string  `env:"ADMIN_API_KEY" envDefault:""`
 
 	GoogleClientID string `env:"GOOGLE_CLIENT_ID" envDefault:""`
 

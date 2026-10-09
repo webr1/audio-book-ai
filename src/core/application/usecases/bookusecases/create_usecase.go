@@ -19,6 +19,7 @@ import (
 )
 
 const TaskTypeProcessBook = "book:process"
+const TaskTypeProcessTrial = "book:process_trial"
 
 type ProcessBookPayload struct {
 	BookID uint `json:"book_id"`
@@ -77,7 +78,9 @@ func (this *BookCreateUseCase) Invoke(ctx context.Context, userID uint, filename
 	if err != nil {
 		return nil, err
 	}
-	if err := this.enqueuer.Enqueue(ctx, TaskTypeProcessBook, payload); err != nil {
+	// Full synthesis is gated behind payment — only the free trial sample
+	// runs automatically here. See ConfirmPaymentUseCase for TaskTypeProcessBook.
+	if err := this.enqueuer.Enqueue(ctx, TaskTypeProcessTrial, payload); err != nil {
 		return nil, err
 	}
 

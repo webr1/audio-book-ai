@@ -123,3 +123,77 @@ func (this *BookRepositoryImpl) SetOutputPath(ctx context.Context, id uint, path
 	}
 	return nil
 }
+
+func (this *BookRepositoryImpl) UpdateTrialStatus(ctx context.Context, id uint, status enum.BookStatus, errMsg string) error {
+	db := this.db().WithContext(ctx)
+
+	result := db.Model(&models.BookModel{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"trial_status":    string(status),
+		"trial_error_msg": errMsg,
+	})
+	if result.Error != nil {
+		return infraError.Wrap(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return infraError.Wrap(gormRecordNotFound)
+	}
+	return nil
+}
+
+func (this *BookRepositoryImpl) UpdateTrialProgress(ctx context.Context, id uint, chunksDone, chunksTotal int) error {
+	db := this.db().WithContext(ctx)
+
+	result := db.Model(&models.BookModel{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"trial_chunks_done":  chunksDone,
+		"trial_chunks_total": chunksTotal,
+	})
+	if result.Error != nil {
+		return infraError.Wrap(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return infraError.Wrap(gormRecordNotFound)
+	}
+	return nil
+}
+
+func (this *BookRepositoryImpl) SetTrialOutputPath(ctx context.Context, id uint, path string) error {
+	db := this.db().WithContext(ctx)
+
+	result := db.Model(&models.BookModel{}).Where("id = ?", id).Update("trial_output_path", path)
+	if result.Error != nil {
+		return infraError.Wrap(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return infraError.Wrap(gormRecordNotFound)
+	}
+	return nil
+}
+
+func (this *BookRepositoryImpl) SetPaymentReceipt(ctx context.Context, id uint, path string) error {
+	db := this.db().WithContext(ctx)
+
+	result := db.Model(&models.BookModel{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"payment_receipt_path": path,
+		"payment_status":       string(enum.PaymentStatusPendingReview),
+	})
+	if result.Error != nil {
+		return infraError.Wrap(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return infraError.Wrap(gormRecordNotFound)
+	}
+	return nil
+}
+
+func (this *BookRepositoryImpl) SetPaymentStatus(ctx context.Context, id uint, status enum.PaymentStatus) error {
+	db := this.db().WithContext(ctx)
+
+	result := db.Model(&models.BookModel{}).Where("id = ?", id).Update("payment_status", string(status))
+	if result.Error != nil {
+		return infraError.Wrap(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return infraError.Wrap(gormRecordNotFound)
+	}
+	return nil
+}

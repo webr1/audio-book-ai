@@ -11,16 +11,17 @@ import (
 )
 
 type App struct {
-	server         *asynq.Server
-	mux            *asynq.ServeMux
-	processHandler *book.ProcessHandler
-	env            *env.Env
+	server              *asynq.Server
+	mux                 *asynq.ServeMux
+	processHandler      *book.ProcessHandler
+	processTrialHandler *book.ProcessTrialHandler
+	env                 *env.Env
 }
 
 // @inject
-func NewApp(e *env.Env, processHandler *book.ProcessHandler) *App {
+func NewApp(e *env.Env, processHandler *book.ProcessHandler, processTrialHandler *book.ProcessTrialHandler) *App {
 	server := asynq.NewServer(asynqtask.RedisConnOpt(e), asynq.Config{Concurrency: 5})
-	return &App{server: server, mux: asynq.NewServeMux(), processHandler: processHandler, env: e}
+	return &App{server: server, mux: asynq.NewServeMux(), processHandler: processHandler, processTrialHandler: processTrialHandler, env: e}
 }
 
 func (this *App) Init() {
@@ -28,6 +29,7 @@ func (this *App) Init() {
 		panic(err)
 	}
 	this.mux.HandleFunc(bookusecases.TaskTypeProcessBook, this.processHandler.ProcessTask)
+	this.mux.HandleFunc(bookusecases.TaskTypeProcessTrial, this.processTrialHandler.ProcessTask)
 }
 
 func (this *App) Start() {

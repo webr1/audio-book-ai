@@ -51,7 +51,12 @@ func InitHttpApp() *http.App {
 	bookGetUseCase := bookusecases.NewBookGetUseCase(bookRepository)
 	getHandler := book.NewGetHandler(bookGetUseCase)
 	audioHandler := book.NewAudioHandler(bookGetUseCase)
-	bookGroup := groups.NewBookGroup(createHandler, getHandler, audioHandler)
+	trialAudioHandler := book.NewTrialAudioHandler(bookGetUseCase)
+	uploadReceiptUseCase := bookusecases.NewUploadReceiptUseCase(bookRepository, store)
+	paymentReceiptHandler := book.NewPaymentReceiptHandler(bookGetUseCase, uploadReceiptUseCase)
+	confirmPaymentUseCase := bookusecases.NewConfirmPaymentUseCase(bookRepository, enqueuer)
+	confirmPaymentHandler := book.NewConfirmPaymentHandler(confirmPaymentUseCase, envEnv)
+	bookGroup := groups.NewBookGroup(createHandler, getHandler, audioHandler, trialAudioHandler, paymentReceiptHandler, confirmPaymentHandler)
 	googleOAuthGateway := gateway.NewGoogleOAuthGatewayImpl(envEnv)
 	userRepository := repository.NewUserRepositoryImpl(baseRepository)
 	tokenServicePort := security.NewJwtTokenService(envEnv)
@@ -81,6 +86,8 @@ func InitAsyncApp() *asynctask.App {
 	concatenator := audio.NewWAVConcatenator()
 	processBookUseCase := bookusecases.NewProcessBookUseCase(bookRepository, store, extractor, chunker, ttsProvider, concatenator)
 	processHandler := book2.NewProcessHandler(processBookUseCase)
-	app := asynctask.NewApp(envEnv, processHandler)
+	processTrialUseCase := bookusecases.NewProcessTrialUseCase(bookRepository, store, extractor, chunker, ttsProvider, concatenator, envEnv)
+	processTrialHandler := book2.NewProcessTrialHandler(processTrialUseCase)
+	app := asynctask.NewApp(envEnv, processHandler, processTrialHandler)
 	return app
 }

@@ -40,7 +40,15 @@ func (this *GetHandler) Handle(c ctx.Context) error {
 		"chunks_done":  book.ChunksDone,
 		"chunks_total": book.ChunksTotal,
 		"error":        book.ErrorMsg,
-		"created_at":   book.CreatedAt,
-		"updated_at":   book.UpdatedAt,
+
+		"trial_status":       book.TrialStatus,
+		"trial_chunks_done":  book.TrialChunksDone,
+		"trial_chunks_total": book.TrialChunksTotal,
+		"trial_error":        book.TrialErrorMsg,
+
+		"payment_status": book.PaymentStatus,
+
+		"created_at": book.CreatedAt,
+		"updated_at": book.UpdatedAt,
 	})
 }
